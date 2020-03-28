@@ -1,9 +1,13 @@
 #components-form-demo-control-ref .ant-btn {
-    margin-right: 8px;
+    margin-right: 18px;
+}
+
+.checkout_but{
+    margin-left:5%;
 }
 
 .alert-mesg{
-    width:20vw;
-    margin-left:22%;
+    width:200px;
+    margin-left:18%;
     margin-bottom:30px;
 }

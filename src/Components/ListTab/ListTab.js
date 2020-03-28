@@ -1,5 +1,5 @@
 import React,{Component} from 'react';
-import { Row, Col, Tabs, Form, Button, Select, Alert, Table } from 'antd';
+import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input } from 'antd';
 
 import './ListTab.css';
 
@@ -59,13 +59,37 @@ class ListTab extends Component{
             price:0,
             quantity:0,
             selected_quantity:0,
-            table:[]
+            table:[],
+            visible:false,
+            canteen_data:[],
+            selected_canteen:"",
+            selected_name:"",
+            selected_number:"",
         };
-    }
+    };
 
     formRef = React.createRef();
 
-    onItemChange = value => {
+    showModal = () => {
+        this.setState({
+          visible: true,
+        });
+    };
+
+    handleOk = e => {
+        window.location.reload();
+        this.setState({
+          visible: false,
+        });
+    };
+
+    handleCancel = e => {
+        this.setState({
+          visible: false,
+        });
+    };
+
+    ItemChange = value => {
         this.setState({
             item:value,
         },()=>{
@@ -84,7 +108,7 @@ class ListTab extends Component{
                 }
             }
         })
-    }
+    };
 
     onAmountChange = value => {
         this.setState({
@@ -109,6 +133,24 @@ class ListTab extends Component{
         })
     };
 
+    onCanteenChange = value => {
+        this.setState({
+            selected_canteen:value
+        })
+    }
+
+    onNameChange = value => {
+        this.setState({
+            selected_name:value
+        })
+    }
+
+    onNumberChange = value => {
+        this.setState({
+            selected_number:value
+        })
+    }
+
     componentWillMount(){
         fetch("http://localhost:5000/groceries",{
             method:"GET"
@@ -124,6 +166,21 @@ class ListTab extends Component{
         })
         .catch(err=>{
             console.log(err);
+        })
+        fetch("http://localhost:5000/canteens",{
+            method:"GET"
+        })
+        .then(res=>{
+            return res.json();
+        })
+        .then(data=>{
+            console.log(data);
+            this.setState({
+                canteen_data:data
+            })
+        })
+        .catch(err=>{
+            console.log(err)
         })
     }
 
@@ -157,9 +214,28 @@ class ListTab extends Component{
                                             <Button type="primary" htmlType="submit" >
                                                 Submit
                                             </Button>
-                                            <Button type="primary" htmlType="button" >
+                                            <Button className="checkout_but" htmlType="button" onClick={this.showModal}>
                                                 Check Out
                                             </Button>
+                                            <Modal title="Confirm your Details to place Order" visible={this.state.visible} onOk={this.handleOk} onCancel={this.handleCancel}>
+                                                <Form ref={this.formRef} name="control-ref" >
+                                                    <Form.Item name="Canteen" label="Please select your desired drop point and time" rules={[{required: true,},]}>
+                                                        <Select placeholder="Select a time" onChange={this.onCanteenChange} allowClear>
+                                                            {Object.keys(this.state.canteen_data).map(i => (
+                                                                Object.keys(this.state.canteen_data[i]).map(j => (
+                                                                    <Option value={i+this.state.canteen_data[i][j]} key={i+this.state.canteen_data[i][j]}>{i+" : "+this.state.canteen_data[i][j]}</Option>
+                                                                ))
+                                                            ))}
+                                                        </Select>
+                                                    </Form.Item>
+                                                    <Form.Item name="name" onChange={this.onNameChange} label="Please enter your name" rules={[{required: true,},]}>
+                                                        <Input placeholder="Enter your name"/>
+                                                    </Form.Item>
+                                                    <Form.Item name="number" onChange={this.onNumberChange} label="Please enter your mobile number" rules={[{required: true,},]}>
+                                                        <Input placeholder="Enter your mobile number"/>
+                                                    </Form.Item>
+                                                </Form>
+                                            </Modal>
                                         </Form.Item>
                                     </Form>
                                 </TabPane>
