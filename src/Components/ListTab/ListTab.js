@@ -1,5 +1,5 @@
 import React,{Component} from 'react';
-import { Row, Col, Tabs, Form, Button, Select, Alert } from 'antd';
+import { Row, Col, Tabs, Form, Button, Select, Alert, Table } from 'antd';
 
 import './ListTab.css';
 
@@ -23,6 +23,30 @@ const tailLayout = {
   },
 };
 
+const columns = [
+    {
+      title: 'Item',
+      dataIndex: 'item',
+      key: 'item',
+      render: text => <b>{text}</b>,
+    },
+    {
+      title: 'Quantity',
+      dataIndex: 'quantity',
+      key: 'quantity',
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+    },
+    {
+        title: 'Total Price',
+        dataIndex: 'totalprice',
+        key: 'totalprice',
+    },
+];
+
 class ListTab extends Component{
     
     constructor(){
@@ -34,7 +58,8 @@ class ListTab extends Component{
             item:"",
             price:0,
             quantity:0,
-            selected_quantity:0
+            selected_quantity:0,
+            table:[]
         };
     }
 
@@ -70,6 +95,17 @@ class ListTab extends Component{
     onFinish = values => {
         this.setState({
             kart:this.state.kart.concat([values])
+        },()=>{
+            console.log(this.state.kart)
+            this.setState({
+                table:this.state.table.concat([{
+                    key:this.state.table.length+1,
+                    item:this.state.item,
+                    quantity:this.state.selected_quantity,
+                    price:this.state.price,
+                    totalprice:this.state.price*this.state.selected_quantity,
+                }])
+            })
         })
     };
 
@@ -121,6 +157,9 @@ class ListTab extends Component{
                                             <Button type="primary" htmlType="submit" >
                                                 Submit
                                             </Button>
+                                            <Button type="primary" htmlType="button" >
+                                                Check Out
+                                            </Button>
                                         </Form.Item>
                                     </Form>
                                 </TabPane>
@@ -128,6 +167,13 @@ class ListTab extends Component{
                         </Tabs>
                     </Col>
                     <Col xs={2} sm={2} md={2} lg={2} xl={1}/>
+                </Row>
+                <Row>
+                    <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
+                    <Col xs={20} sm={20} md={16} lg={16} xl={16}>
+                        <Table columns={columns} dataSource={this.state.table}/>
+                    </Col>
+                    <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
                 </Row>
             </div>
         );
