@@ -77,9 +77,30 @@ class ListTab extends Component{
     };
 
     handleOk = e => {
-        window.location.reload();
+        let data = {
+            Name:this.state.selected_name,
+            Zone:this.state.selected_canteen,
+            Mobile:this.state.selected_number,
+            Order:this.state.table,
+        }
         this.setState({
           visible: false,
+        },()=>{
+            fetch("",{
+                methid:"POST",
+                body: JSON.stringify(data),
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json"
+                },
+                credentials: "same-origin"
+            })
+            .then(res=>{
+                window.location.reload();
+            })
+            .catch(err=>{
+                console.log(err);
+            })
         });
     };
 
@@ -89,7 +110,7 @@ class ListTab extends Component{
         });
     };
 
-    ItemChange = value => {
+    onItemChange = value => {
         this.setState({
             item:value,
         },()=>{
