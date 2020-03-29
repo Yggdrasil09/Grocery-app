@@ -108,7 +108,7 @@ class ListTab extends Component{
                 this.setState({
                   visible: false,
                 },()=>{
-                    fetch("http://localhost:5000/submit-order",{
+                    fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/submit-order",{
                         method:"POST",
                         body: JSON.stringify(data),
                         headers: {
@@ -205,7 +205,7 @@ class ListTab extends Component{
     }
 
     componentWillMount(){
-        fetch("http://localhost:5000/test",{
+        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/test",{
             method:"GET"
         })
         .then(res=>{
@@ -220,7 +220,7 @@ class ListTab extends Component{
         .catch(err=>{
             console.log(err);
         })
-        fetch("http://localhost:5000/trial",{
+        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/trial",{
             method:"GET"
         })
         .then(res=>{
