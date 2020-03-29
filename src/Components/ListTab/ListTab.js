@@ -1,5 +1,5 @@
 import React,{Component} from 'react';
-import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input } from 'antd';
+import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input, message } from 'antd';
 
 import './ListTab.css';
 
@@ -60,48 +60,72 @@ class ListTab extends Component{
             quantity:0,
             selected_quantity:0,
             table:[],
+            jsonlist:[],
             visible:false,
             canteen_data:[],
             selected_canteen:"",
             selected_name:"",
             selected_number:"",
+            itemId:"",
         };
     };
 
     formRef = React.createRef();
 
     showModal = () => {
-        this.setState({
-          visible: true,
-        });
+        if(this.state.table.length === 0)
+        {
+            message.error("Please enter items into the cart!",3)
+        }
+        else
+        {
+            this.setState({
+                visible: true,
+            });
+        }
     };
 
     handleOk = e => {
-        let data = {
-            Name:this.state.selected_name,
-            Zone:this.state.selected_canteen,
-            Mobile:this.state.selected_number,
-            Order:this.state.table,
+        if(this.state.selected_canteen===""||this.state.selected_name.length===0||this.state.selected_number.length===0)
+        {
+            message.error("Please enter all the details!",3)
         }
-        this.setState({
-          visible: false,
-        },()=>{
-            fetch("",{
-                methid:"POST",
-                body: JSON.stringify(data),
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json"
-                },
-                credentials: "same-origin"
-            })
-            .then(res=>{
-                window.location.reload();
-            })
-            .catch(err=>{
-                console.log(err);
-            })
-        });
+        else
+        {
+            if(this.state.selected_number.length!==10)
+            {
+                message.error("Please enter a 10-digit phone number!")
+            }
+            else
+            {
+                let data = {
+                    Name:this.state.selected_name,
+                    Zone:this.state.selected_canteen,
+                    Mobile:this.state.selected_number,
+                    Order:this.state.jsonlist,
+                }
+                console.log(data);
+                this.setState({
+                  visible: false,
+                },()=>{
+                    fetch("http://localhost:5000/submit-order",{
+                        method:"POST",
+                        body: JSON.stringify(data),
+                        headers: {
+                            Accept: "application/json",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "same-origin"
+                    })
+                    .then(res=>{
+                        window.location.reload();
+                    })
+                    .catch(err=>{
+                        console.log(err);
+                    })
+                });
+            }
+        }
     };
 
     handleCancel = e => {
@@ -123,7 +147,8 @@ class ListTab extends Component{
                     {
                         this.setState({
                             price:this.state.data[i][j]["Price"],
-                            quantity:this.state.data[i][j]["Tab"]
+                            quantity:this.state.data[i][j]["Tab"],
+                            itemId:this.state.data[i][j]["Item Code"],
                         })
                     }
                 }
@@ -149,12 +174,19 @@ class ListTab extends Component{
                     quantity:this.state.selected_quantity,
                     price:this.state.price,
                     totalprice:this.state.price*this.state.selected_quantity,
+                }]),
+                jsonlist:this.state.jsonlist.concat([{
+                    item:this.state.item,
+                    quantity:this.state.quantity,
+                    price:this.state.price,
+                    code:this.state.itemId,
                 }])
             })
         })
     };
 
     onCanteenChange = value => {
+        console.log(value)
         this.setState({
             selected_canteen:value
         })
@@ -162,18 +194,18 @@ class ListTab extends Component{
 
     onNameChange = value => {
         this.setState({
-            selected_name:value
+            selected_name:value.target.value
         })
     }
 
     onNumberChange = value => {
         this.setState({
-            selected_number:value
+            selected_number:value.target.value
         })
     }
 
     componentWillMount(){
-        fetch("http://localhost:5000/groceries",{
+        fetch("http://localhost:5000/test",{
             method:"GET"
         })
         .then(res=>{
@@ -188,7 +220,7 @@ class ListTab extends Component{
         .catch(err=>{
             console.log(err);
         })
-        fetch("http://localhost:5000/canteens",{
+        fetch("http://localhost:5000/trial",{
             method:"GET"
         })
         .then(res=>{
@@ -226,8 +258,8 @@ class ListTab extends Component{
                                         <Alert className="alert-mesg" message={"Price per unit : "+this.state.price+"/-"} type="info" />
                                         <Form.Item name="Quantity" label="Select the quantity" rules={[{required: true,},]}>
                                             <Select placeholder="Select the quantity of item" onChange={this.onAmountChange} allowClear>
-                                                {[...Array(this.state.quantity==="Item Out of Stock"?"":parseInt(this.state.quantity)+1).keys()].map(j => (
-                                                    <Option value={j} key={j}>{j}</Option>
+                                                {Object.keys(this.state.quantity).map(j => (
+                                                    <Option value={this.state.quantity[j]} key={this.state.quantity[j]}>{this.state.quantity[j]}</Option>
                                                 ))}
                                             </Select>
                                         </Form.Item>
@@ -244,16 +276,16 @@ class ListTab extends Component{
                                                         <Select placeholder="Select a time" onChange={this.onCanteenChange} allowClear>
                                                             {Object.keys(this.state.canteen_data).map(i => (
                                                                 Object.keys(this.state.canteen_data[i]).map(j => (
-                                                                    <Option value={i+this.state.canteen_data[i][j]} key={i+this.state.canteen_data[i][j]}>{i+" : "+this.state.canteen_data[i][j]}</Option>
+                                                                    <Option value={i+"!"+this.state.canteen_data[i][j]} key={i+this.state.canteen_data[i][j]}>{i+" : "+this.state.canteen_data[i][j]}</Option>
                                                                 ))
                                                             ))}
                                                         </Select>
                                                     </Form.Item>
-                                                    <Form.Item name="name" onChange={this.onNameChange} label="Please enter your name" rules={[{required: true,},]}>
-                                                        <Input placeholder="Enter your name"/>
+                                                    <Form.Item name="name"  label="Please enter your name" rules={[{required: true,},]}>
+                                                        <Input onChange={this.onNameChange} placeholder="Enter your name"/>
                                                     </Form.Item>
-                                                    <Form.Item name="number" onChange={this.onNumberChange} label="Please enter your mobile number" rules={[{required: true,},]}>
-                                                        <Input placeholder="Enter your mobile number"/>
+                                                    <Form.Item name="number"  label="Please enter your mobile number" rules={[{required: true,},]}>
+                                                        <Input onChange={this.onNumberChange} placeholder="Enter your mobile number"/>
                                                     </Form.Item>
                                                 </Form>
                                             </Modal>
