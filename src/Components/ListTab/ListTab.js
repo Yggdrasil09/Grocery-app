@@ -1,11 +1,15 @@
 import React,{Component} from 'react';
-import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input, message } from 'antd';
+import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input, message, Typography, Popconfirm } from 'antd';
 
 import './ListTab.css';
 
 const { TabPane } = Tabs;
 
 const { Option } = Select;
+
+const { Title, Paragraph } = Typography;
+
+const { TextArea } = Input;
 
 const layout = {
   labelCol: {
@@ -66,6 +70,7 @@ class ListTab extends Component{
             selected_canteen:"",
             selected_name:"",
             selected_number:"",
+            selected_feedback:"",
             itemId:"",
         };
     };
@@ -86,29 +91,26 @@ class ListTab extends Component{
     };
 
     handleOk = e => {
-        if(this.state.selected_canteen===""||this.state.selected_name.length===0||this.state.selected_number.length===0)
+        if(this.state.selected_canteen===""||this.state.selected_name.length===0)
         {
             message.error("Please enter all the details!",3)
         }
         else
         {
-            if(this.state.selected_number.length!==10)
-            {
-                message.error("Please enter a 10-digit phone number!")
-            }
-            else
+            if(this.state.selected_number.length===10||this.state.selected_number.length===0)
             {
                 let data = {
                     Name:this.state.selected_name,
                     Zone:this.state.selected_canteen,
                     Mobile:this.state.selected_number,
                     Order:this.state.jsonlist,
+                    Feedback:this.state.feedback,
                 }
                 console.log(data);
                 this.setState({
                   visible: false,
                 },()=>{
-                    fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/submit-order",{
+                    fetch("http://localhost:5000/submit-order",{
                         method:"POST",
                         body: JSON.stringify(data),
                         headers: {
@@ -124,6 +126,10 @@ class ListTab extends Component{
                         console.log(err);
                     })
                 });
+            }
+            else
+            {
+                message.error("Please enter a 10-digit phone number!")
             }
         }
     };
@@ -173,7 +179,7 @@ class ListTab extends Component{
                     item:this.state.item,
                     quantity:this.state.selected_quantity,
                     price:this.state.price,
-                    totalprice:this.state.price*this.state.selected_quantity,
+                    totalprice:(this.state.price*this.state.selected_quantity).toFixed(2),
                 }]),
                 jsonlist:this.state.jsonlist.concat([{
                     item:this.state.item,
@@ -204,8 +210,18 @@ class ListTab extends Component{
         })
     }
 
+    onFeedbackChange = value => {
+        this.setState({
+            selected_feedback:value.target.value,
+        })
+    }
+
+    cancel_order = e => {
+        ;
+    }
+
     componentWillMount(){
-        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/test",{
+        fetch("http://localhost:5000/test",{
             method:"GET"
         })
         .then(res=>{
@@ -220,7 +236,7 @@ class ListTab extends Component{
         .catch(err=>{
             console.log(err);
         })
-        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/trial",{
+        fetch("http://localhost:5000/trial",{
             method:"GET"
         })
         .then(res=>{
@@ -241,10 +257,18 @@ class ListTab extends Component{
         const { mode } = this.state.mode;
         return(
             <div>
+                <Row>
+                    <Col xs={1} sm={2} md={1} lg={1} xl={1}/>
+                    <Col xs={22} sm={20} md={22} lg={22} xl={22}>
+                        <Title level={2}>NSC Canteen Online Delivery Service</Title>
+                        <Title level={3}>Contact: +91-8082992508</Title>
+                    </Col>
+                    <Col xs={1} sm={2} md={1} lg={1} xl={1}/>
+                </Row>
                 <Row >
                     <Col xs={2} sm={2} md={2} lg={2} xl={1}/>
                     <Col xs={20} sm={20} md={20} lg={20} xl={22}>
-                        <Tabs defaultActiveKey="1" tabPosition={mode} style={{ height: "70vh" }} size='large'>
+                        <Tabs defaultActiveKey="1" tabPosition={mode} style={{ height: "65vh" }} size='large'>
                             {Object.keys(this.state.data).map(i => (
                                 <TabPane tab={`${i}`} key={i}>
                                     <Form {...layout} ref={this.formRef} name="control-ref" onFinish={this.onFinish}>
@@ -257,16 +281,18 @@ class ListTab extends Component{
                                         </Form.Item>
                                         <Alert className="alert-mesg" message={"Price per unit : "+this.state.price+"/-"} type="info" />
                                         <Form.Item name="Quantity" label="Select the quantity" rules={[{required: true,},]}>
-                                            <Select placeholder="Select the quantity of item" onChange={this.onAmountChange} allowClear>
+                                            <Select  placeholder="Select the quantity of item" onChange={this.onAmountChange} allowClear>
                                                 {Object.keys(this.state.quantity).map(j => (
                                                     <Option value={this.state.quantity[j]} key={this.state.quantity[j]}>{this.state.quantity[j]}</Option>
                                                 ))}
                                             </Select>
                                         </Form.Item>
                                         <Form.Item {...tailLayout}>
-                                            <Button type="primary" htmlType="submit" >
-                                                Submit
-                                            </Button>
+                                            <Popconfirm title={(this.state.item !==""&&this.state.selected_quantity>0)?"Are you sure you want to order "+ this.state.selected_quantity + " units of " + this.state.item:"Please select the above items"} onConfirm={this.onFinish} onCancel={this.cancel_order} okText="Yes" cancelText="No">
+                                                <Button type="primary" htmlType="submit" >
+                                                    Submit
+                                                </Button>
+                                            </Popconfirm>
                                             <Button className="checkout_but" htmlType="button" onClick={this.showModal}>
                                                 Check Out
                                             </Button>
@@ -284,8 +310,11 @@ class ListTab extends Component{
                                                     <Form.Item name="name"  label="Please enter your name" rules={[{required: true,},]}>
                                                         <Input onChange={this.onNameChange} placeholder="Enter your name"/>
                                                     </Form.Item>
-                                                    <Form.Item name="number"  label="Please enter your mobile number" rules={[{required: true,},]}>
+                                                    <Form.Item name="number"  label="Please enter your mobile number">
                                                         <Input onChange={this.onNumberChange} placeholder="Enter your mobile number"/>
+                                                    </Form.Item>
+                                                    <Form.Item name="feedback"  label="Please enter your feedback">
+                                                        <TextArea onChange={this.onFeedbackChange} placeholder="Enter your feedback" rows={4} />
                                                     </Form.Item>
                                                 </Form>
                                             </Modal>
@@ -303,6 +332,21 @@ class ListTab extends Component{
                         <Table columns={columns} dataSource={this.state.table}/>
                     </Col>
                     <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
+                </Row>
+                <Row>
+                    <Col xs={2} sm={2} md={2} lg={2} xl={2}/>
+                    <Col xs={20} sm={20} md={20} lg={20} xl={20}>
+                        <Paragraph>
+                            NSC is commencing home area delivery of CSD items in a few officers accommodation where there is no other CSD counter nearby. The item list has been kept to essentials. The same will be revised regularly as per availability of stock and suggestions from dependents. Feel free to call the officer incharge at +91-8082992508
+                        </Paragraph>
+                        <Paragraph>
+                            The orders placed will be delivered the next day as per times displayed. 3 ₹ will be charged over and above the billing amount for packing material. Please give the exact amount to the delivery boy. This will avoid crowding and avoidable delays in the process.
+                        </Paragraph>
+                        <Paragraph>
+                            Stay In : Stay Safe !!!
+                        </Paragraph>
+                    </Col>
+                    <Col xs={2} sm={2} md={2} lg={2} xl={2}/>
                 </Row>
             </div>
         );
