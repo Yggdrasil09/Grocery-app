@@ -110,7 +110,7 @@ class ListTab extends Component{
                 this.setState({
                   visible: false,
                 },()=>{
-                    fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/submit-order",{
+                    fetch("http://localhost:5000/submit-order",{
                         method:"POST",
                         body: JSON.stringify(data),
                         headers: {
@@ -221,7 +221,7 @@ class ListTab extends Component{
     }
 
     componentWillMount(){
-        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/test",{
+        fetch("http://localhost:5000/test",{
             method:"GET"
         })
         .then(res=>{
@@ -236,7 +236,7 @@ class ListTab extends Component{
         .catch(err=>{
             console.log(err);
         })
-        fetch("http://groceryappv1-env.eba-fbstmdmg.us-east-2.elasticbeanstalk.com/trial",{
+        fetch("http://localhost:5000/trial",{
             method:"GET"
         })
         .then(res=>{
@@ -268,7 +268,7 @@ class ListTab extends Component{
                 <Row >
                     <Col xs={2} sm={2} md={2} lg={2} xl={1}/>
                     <Col xs={20} sm={20} md={20} lg={20} xl={22}>
-                        <Tabs defaultActiveKey="1" tabPosition={mode} style={{ height: "65vh" }} size='large'>
+                        <Tabs defaultActiveKey="1" tabPosition={mode} size='large'>
                             {Object.keys(this.state.data).map(i => (
                                 <TabPane tab={`${i}`} key={i}>
                                     <Form {...layout} ref={this.formRef} name="control-ref" onFinish={this.onFinish}>
@@ -288,7 +288,7 @@ class ListTab extends Component{
                                             </Select>
                                         </Form.Item>
                                         <Form.Item {...tailLayout}>
-                                            <Popconfirm title={(this.state.item !==""&&this.state.selected_quantity>0)?"Are you sure you want to order "+ this.state.selected_quantity + " units of " + this.state.item:"Please select the above items"} onConfirm={this.onFinish} onCancel={this.cancel_order} okText="Yes" cancelText="No">
+                                            <Popconfirm title={(this.state.item !==""&&this.state.selected_quantity>0)?"Are you sure you want to order "+ this.state.selected_quantity + " units of " + this.state.item:"Please select the above items"} onConfirm={(this.state.item !==""&&this.state.selected_quantity>0)?this.onFinish:this.cancel_order} onCancel={this.cancel_order} okText="Yes" cancelText="No">
                                                 <Button type="primary" htmlType="submit" >
                                                     Submit
                                                 </Button>
@@ -326,10 +326,10 @@ class ListTab extends Component{
                     </Col>
                     <Col xs={2} sm={2} md={2} lg={2} xl={1}/>
                 </Row>
-                <Row>
+                <Row style={{ marginTop:"20px"}}>
                     <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
                     <Col xs={20} sm={20} md={16} lg={16} xl={16}>
-                        <Table columns={columns} dataSource={this.state.table}/>
+                        <Table columns={columns} dataSource={this.state.table} pagination={{ pageSize: 4 }}/>
                     </Col>
                     <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
                 </Row>
