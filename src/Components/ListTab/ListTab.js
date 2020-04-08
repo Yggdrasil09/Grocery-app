@@ -1,5 +1,6 @@
 import React,{Component} from 'react';
 import { Row, Col, Tabs, Form, Button, Select, Alert, Table, Modal, Input, message, Typography, Popconfirm } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 
 import './ListTab.css';
 
@@ -27,30 +28,6 @@ const tailLayout = {
   },
 };
 
-const columns = [
-    {
-      title: 'Item',
-      dataIndex: 'item',
-      key: 'item',
-      render: text => <b>{text}</b>,
-    },
-    {
-      title: 'Quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-    },
-    {
-        title: 'Total Price',
-        dataIndex: 'totalprice',
-        key: 'totalprice',
-    },
-];
-
 class ListTab extends Component{
     
     constructor(){
@@ -69,10 +46,42 @@ class ListTab extends Component{
             canteen_data:[],
             selected_canteen:"",
             selected_name:"",
-            selected_number:"",
             selected_feedback:"",
             itemId:"",
         };
+        this.columns = [
+            {
+              title: 'Item',
+              dataIndex: 'item',
+              key: 'item',
+              render: text => <b>{text}</b>,
+            },
+            {
+              title: 'Quantity',
+              dataIndex: 'quantity',
+              key: 'quantity',
+            },
+            {
+              title: 'Price',
+              dataIndex: 'price',
+              key: 'price',
+            },
+            {
+                title: 'Total Price',
+                dataIndex: 'totalprice',
+                key: 'totalprice',
+            },
+            {
+                title: 'operation',
+                dataIndex: 'operation',
+                render: (text, record) =>
+                  this.state.table.length >= 1 ? (
+                    <Popconfirm title="Sure to delete?" onConfirm={() => this.handleDelete(record.key)}>
+                      <DeleteOutlined style={{ fontSize: '27px', color: 'red' , marginLeft:'10px'}} />
+                    </Popconfirm>
+                  ) : null,
+            },
+        ];
     };
 
     formRef = React.createRef();
@@ -97,40 +106,32 @@ class ListTab extends Component{
         }
         else
         {
-            if(this.state.selected_number.length===10||this.state.selected_number.length===0)
-            {
-                let data = {
-                    Name:this.state.selected_name,
-                    Zone:this.state.selected_canteen,
-                    Mobile:this.state.selected_number,
-                    Order:this.state.jsonlist,
-                    Feedback:this.state.feedback,
-                }
-                console.log(data);
-                this.setState({
-                  visible: false,
-                },()=>{
-                    fetch("http://localhost:5000/submit-order",{
-                        method:"POST",
-                        body: JSON.stringify(data),
-                        headers: {
-                            Accept: "application/json",
-                            "Content-Type": "application/json"
-                        },
-                        credentials: "same-origin"
-                    })
-                    .then(res=>{
-                        window.location.reload();
-                    })
-                    .catch(err=>{
-                        console.log(err);
-                    })
-                });
+            let data = {
+                Name:this.state.selected_name,
+                Zone:this.state.selected_canteen,
+                Order:this.state.jsonlist,
+                Feedback:this.state.selected_feedback,
             }
-            else
-            {
-                message.error("Please enter a 10-digit phone number!")
-            }
+            console.log(data);
+            this.setState({
+                visible: false,
+            },()=>{
+                fetch("http://localhost:5000/submit-order",{
+                    method:"POST",
+                    body: JSON.stringify(data),
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin"
+                })
+                .then(res=>{
+                    window.location.reload();
+                })
+                .catch(err=>{
+                    console.log(err);
+                })
+            });
         }
     };
 
@@ -204,12 +205,6 @@ class ListTab extends Component{
         })
     }
 
-    onNumberChange = value => {
-        this.setState({
-            selected_number:value.target.value
-        })
-    }
-
     onFeedbackChange = value => {
         this.setState({
             selected_feedback:value.target.value,
@@ -219,6 +214,21 @@ class ListTab extends Component{
     cancel_order = e => {
         ;
     }
+
+    onTabChange =  e => {
+        this.setState({
+            price:0,
+            item:"",
+            selected_quantity:0,
+        });
+    }
+
+    handleDelete = key => {
+        const dataSource = [...this.state.table];
+        this.setState({
+            table: dataSource.filter(item => item.key !== key) 
+        });
+    };
 
     componentWillMount(){
         fetch("http://localhost:5000/test",{
@@ -268,7 +278,7 @@ class ListTab extends Component{
                 <Row >
                     <Col xs={2} sm={2} md={2} lg={2} xl={1}/>
                     <Col xs={20} sm={20} md={20} lg={20} xl={22}>
-                        <Tabs defaultActiveKey="1" tabPosition={mode} size='large'>
+                        <Tabs defaultActiveKey="1" tabPosition={mode} onChange={this.onTabChange} size='large'>
                             {Object.keys(this.state.data).map(i => (
                                 <TabPane tab={`${i}`} key={i}>
                                     <Form {...layout} ref={this.formRef} name="control-ref" onFinish={this.onFinish}>
@@ -288,17 +298,15 @@ class ListTab extends Component{
                                             </Select>
                                         </Form.Item>
                                         <Form.Item {...tailLayout}>
-                                            <Popconfirm title={(this.state.item !==""&&this.state.selected_quantity>0)?"Are you sure you want to order "+ this.state.selected_quantity + " units of " + this.state.item:"Please select the above items"} onConfirm={(this.state.item !==""&&this.state.selected_quantity>0)?this.onFinish:this.cancel_order} onCancel={this.cancel_order} okText="Yes" cancelText="No">
-                                                <Button type="primary" htmlType="submit" >
-                                                    Submit
-                                                </Button>
-                                            </Popconfirm>
+                                            <Button type="primary" htmlType="submit" >
+                                                Submit
+                                            </Button>
                                             <Button className="checkout_but" htmlType="button" onClick={this.showModal}>
                                                 Check Out
                                             </Button>
                                             <Modal title="Confirm your Details to place Order" visible={this.state.visible} onOk={this.handleOk} onCancel={this.handleCancel}>
-                                                <Form ref={this.formRef} name="control-ref" >
-                                                    <Form.Item name="Canteen" label="Please select your desired drop point and time" rules={[{required: true,},]}>
+                                                <Form layout={"vertical"} ref={this.formRef} name="control-ref" >
+                                                    <Form.Item  {...null} name="Canteen" label="Please select your desired drop point and time" rules={[{required: true,},]}>
                                                         <Select placeholder="Select a time" onChange={this.onCanteenChange} allowClear>
                                                             {Object.keys(this.state.canteen_data).map(i => (
                                                                 Object.keys(this.state.canteen_data[i]).map(j => (
@@ -309,9 +317,6 @@ class ListTab extends Component{
                                                     </Form.Item>
                                                     <Form.Item name="name"  label="Please enter your name" rules={[{required: true,},]}>
                                                         <Input onChange={this.onNameChange} placeholder="Enter your name"/>
-                                                    </Form.Item>
-                                                    <Form.Item name="number"  label="Please enter your mobile number">
-                                                        <Input onChange={this.onNumberChange} placeholder="Enter your mobile number"/>
                                                     </Form.Item>
                                                     <Form.Item name="feedback"  label="Please enter your feedback">
                                                         <TextArea onChange={this.onFeedbackChange} placeholder="Enter your feedback" rows={4} />
@@ -329,7 +334,7 @@ class ListTab extends Component{
                 <Row style={{ marginTop:"20px"}}>
                     <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
                     <Col xs={20} sm={20} md={16} lg={16} xl={16}>
-                        <Table columns={columns} dataSource={this.state.table} pagination={{ pageSize: 4 }}/>
+                        <Table columns={this.columns} dataSource={this.state.table} pagination={{ pageSize: 4 }}/>
                     </Col>
                     <Col xs={2} sm={2} md={4} lg={4} xl={4}/>
                 </Row>
